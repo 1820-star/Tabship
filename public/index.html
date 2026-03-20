@@ -281,52 +281,50 @@
     }
 
     .tile-preview {
-      position: relative;
       height: calc(100% - 46px);
-      background: linear-gradient(180deg, rgba(255, 143, 42, 0.08), rgba(0, 0, 0, 0.03));
+      padding: 10px;
     }
 
-    .tile-preview iframe {
-      border: none;
-      width: 100%;
+    .preview-face {
       height: 100%;
-      pointer-events: none;
-    }
-
-    .tile-overlay {
-      position: absolute;
-      inset: 0;
-      cursor: pointer;
-      background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.08));
-    }
-
-    .blocked-hint {
-      position: absolute;
-      inset: 10px;
       border: 1px dashed var(--line);
       border-radius: 10px;
-      display: grid;
-      place-items: center;
+      background: linear-gradient(180deg, rgba(255, 143, 42, 0.07), rgba(0, 0, 0, 0.02));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
       text-align: center;
-      font-size: 12px;
       color: var(--muted);
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.45);
+      font-size: 12px;
+      padding: 12px;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease;
     }
 
-    body.night .blocked-hint {
-      background: rgba(0, 0, 0, 0.25);
+    .preview-face:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
     }
 
-    .blocked-hint button {
-      margin-top: 8px;
+    .preview-host {
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .preview-open {
       border: none;
       border-radius: 8px;
       background: var(--accent);
       color: #37230d;
       font-size: 12px;
       font-weight: 700;
-      padding: 7px 9px;
+      padding: 7px 10px;
       cursor: pointer;
     }
 
@@ -340,98 +338,6 @@
       display: grid;
       place-items: center;
       font-weight: 600;
-    }
-
-    #fullscreen {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 20;
-      background: rgba(12, 10, 8, 0.82);
-      backdrop-filter: blur(4px);
-      flex-direction: column;
-    }
-
-    #fullscreen.active {
-      display: flex;
-    }
-
-    #fs-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px;
-      background: var(--card);
-      border-bottom: 1px solid var(--line);
-      position: relative;
-    }
-
-    #fs-back,
-    #fs-open-link {
-      border: none;
-      border-radius: 9px;
-      padding: 8px 10px;
-      background: var(--accent);
-      color: #33200c;
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    #fs-title {
-      flex: 1;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    #fs-timer {
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    #timer-bar {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      height: 3px;
-      background: linear-gradient(90deg, var(--accent), #ffc070);
-      transition: width 1s linear;
-    }
-
-    #fs-content {
-      position: relative;
-      flex: 1;
-      padding: 10px;
-    }
-
-    #fs-iframe {
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: #fff;
-    }
-
-    #fs-blocked {
-      display: none;
-      position: absolute;
-      inset: 10px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: var(--card);
-      color: var(--text);
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 16px;
-    }
-
-    #fs-blocked p {
-      margin-bottom: 10px;
-      color: var(--muted);
-      font-size: 13px;
     }
 
     #modal-overlay {
@@ -573,24 +479,6 @@
     <div id="grid"></div>
   </div>
 
-  <div id="fullscreen">
-    <div id="fs-bar">
-      <button id="fs-back" type="button" onclick="closeFullscreen()">Zurueck</button>
-      <span id="fs-title"></span>
-      <span id="fs-timer"></span>
-      <div id="timer-bar"></div>
-    </div>
-    <div id="fs-content">
-      <iframe id="fs-iframe" src="about:blank"></iframe>
-      <div id="fs-blocked">
-        <div>
-          <p>iFrame blockiert</p>
-          <button id="fs-open-link" type="button">Extern oeffnen</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div id="modal-overlay">
     <div id="modal">
       <h2 id="modal-title">App</h2>
@@ -616,22 +504,7 @@
 
   <script>
     let tiles = JSON.parse(localStorage.getItem('launcher_tiles') || '[]');
-    let inactivityTimer = null;
-    let countdownInterval = null;
     let editingIndex = null;
-    let currentFullscreenUrl = '';
-    const TIMEOUT_SEC = 60;
-
-    const KNOWN_BLOCKED_HOST_PATTERNS = [
-      /(^|\.)google\./,
-      /(^|\.)accounts\.google\./,
-      /(^|\.)mail\.google\./,
-      /(^|\.)drive\.google\./,
-      /(^|\.)docs\.google\./,
-      /(^|\.)calendar\.google\./,
-      /(^|\.)facebook\.com$/,
-      /(^|\.)instagram\.com$/
-    ];
 
     const TAG_COLORS = {
       arbeit: { bg: '#ebf4ff', fg: '#2f5eb2', bd: '#bfd5ff' },
@@ -664,12 +537,6 @@
       }
     }
 
-    function isLikelyFrameBlocked(url) {
-      const host = parseHost(url);
-      if (!host) return false;
-      return KNOWN_BLOCKED_HOST_PATTERNS.some((pattern) => pattern.test(host));
-    }
-
     function normalizeUrl(rawUrl) {
       const trimmed = rawUrl.trim();
       if (!trimmed) return '';
@@ -698,25 +565,14 @@
     }
 
     function buildPreviewHtml(tile, i) {
-      const blocked = isLikelyFrameBlocked(tile.url);
-
-      if (blocked) {
-        return `
-          <div class="tile-preview">
-            <div class="blocked-hint">
-              <div>
-                iFrame blockiert<br/>
-                <button type="button" onclick="event.stopPropagation();openExternal('${escapeHtml(tile.url)}')">Extern</button>
-              </div>
-            </div>
-            <div class="tile-overlay" onclick="openFullscreen(${i})"></div>
-          </div>`;
-      }
+      const host = parseHost(tile.url) || tile.url;
 
       return `
         <div class="tile-preview">
-          <iframe src="${escapeHtml(tile.url)}" loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
-          <div class="tile-overlay" onclick="openFullscreen(${i})"></div>
+          <div class="preview-face" onclick="openTile(${i})">
+            <div class="preview-host" title="${escapeHtml(host)}">${escapeHtml(host)}</div>
+            <button class="preview-open" type="button" onclick="event.stopPropagation();openTile(${i})">Oeffnen</button>
+          </div>
         </div>`;
     }
 
@@ -760,83 +616,10 @@
       });
     }
 
-    function openFullscreen(i) {
+    function openTile(i) {
       const tile = tiles[i];
       if (!tile) return;
-
-      const fullscreen = document.getElementById('fullscreen');
-      const iframe = document.getElementById('fs-iframe');
-      const blockedLayer = document.getElementById('fs-blocked');
-      const openBtn = document.getElementById('fs-open-link');
-
-      currentFullscreenUrl = tile.url;
-      document.getElementById('fs-title').textContent = tile.name;
-
-      if (isLikelyFrameBlocked(tile.url)) {
-        iframe.style.display = 'none';
-        iframe.src = 'about:blank';
-        blockedLayer.style.display = 'flex';
-        openBtn.onclick = () => openExternal(tile.url);
-      } else {
-        blockedLayer.style.display = 'none';
-        iframe.style.display = 'block';
-        iframe.src = tile.url;
-      }
-
-      fullscreen.classList.add('active');
-      resetInactivityTimer();
-
-      ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach((eventName) => {
-        fullscreen.addEventListener(eventName, resetInactivityTimer);
-      });
-    }
-
-    function closeFullscreen() {
-      const fullscreen = document.getElementById('fullscreen');
-      const iframe = document.getElementById('fs-iframe');
-      const blockedLayer = document.getElementById('fs-blocked');
-      clearTimeout(inactivityTimer);
-      clearInterval(countdownInterval);
-
-      fullscreen.classList.remove('active');
-      iframe.src = 'about:blank';
-      iframe.style.display = 'block';
-      blockedLayer.style.display = 'none';
-      document.getElementById('fs-timer').textContent = '';
-      document.getElementById('timer-bar').style.width = '100%';
-      currentFullscreenUrl = '';
-
-      ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach((eventName) => {
-        fullscreen.removeEventListener(eventName, resetInactivityTimer);
-      });
-    }
-
-    function resetInactivityTimer() {
-      clearTimeout(inactivityTimer);
-      clearInterval(countdownInterval);
-
-      let remaining = TIMEOUT_SEC;
-      const bar = document.getElementById('timer-bar');
-      const timerLabel = document.getElementById('fs-timer');
-      bar.style.transition = 'none';
-      bar.style.width = '100%';
-      timerLabel.textContent = `Zurueck ${remaining}s`;
-
-      countdownInterval = setInterval(() => {
-        remaining--;
-        timerLabel.textContent = `Zurueck ${remaining}s`;
-        const pct = (remaining / TIMEOUT_SEC) * 100;
-        bar.style.transition = 'width 1s linear';
-        bar.style.width = pct + '%';
-
-        if (remaining <= 0) {
-          clearInterval(countdownInterval);
-        }
-      }, 1000);
-
-      inactivityTimer = setTimeout(() => {
-        closeFullscreen();
-      }, TIMEOUT_SEC * 1000);
+      openExternal(tile.url);
     }
 
     function openModal(editIdx = null) {
@@ -915,13 +698,7 @@
       if (event.key === 'Escape') {
         if (document.getElementById('modal-overlay').classList.contains('active')) {
           closeModal();
-        } else if (document.getElementById('fullscreen').classList.contains('active')) {
-          closeFullscreen();
         }
-      }
-
-      if (event.key.toLowerCase() === 'o' && currentFullscreenUrl && document.getElementById('fullscreen').classList.contains('active')) {
-        openExternal(currentFullscreenUrl);
       }
     });
 
