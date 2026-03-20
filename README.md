@@ -24,6 +24,6 @@ npm run deploy
 
 ## Wichtige Dateien
 
-- `index.html`: Die Launcher-Oberflaeche.
+- `public/index.html`: Die Launcher-Oberflaeche.
 - `wrangler.toml`: Cloudflare-Konfiguration fuer statische Assets.
 - `package-lock.json`: Lockfile fuer reproduzierbare CI-Builds.
