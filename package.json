@@ -1,0 +1,26 @@
+{
+  "name": "tabship",
+  "version": "1.0.0",
+  "description": "Simple launcher app deployed with Cloudflare Workers static assets",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "wrangler deploy",
+    "deploy:dry": "wrangler deploy --dry-run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1820-star/Tabship.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/1820-star/Tabship/issues"
+  },
+  "homepage": "https://github.com/1820-star/Tabship#readme",
+  "devDependencies": {
+    "wrangler": "^4.76.0"
+  }
+}

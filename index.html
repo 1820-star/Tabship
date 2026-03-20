@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Launcher</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── GRID VIEW ── */
+    #launcher {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: #ffffff;
+      border-bottom: 1px solid #e0e4ea;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    #topbar h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a2e;
+      letter-spacing: -0.3px;
+    }
+
+    #add-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #4f6ef7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #add-btn:hover { background: #3a57e8; }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .tile {
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+      position: relative;
+      border: 2px solid transparent;
+    }
+    .tile:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      border-color: #4f6ef7;
+    }
+
+    .tile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #f8f9fb;
+      border-bottom: 1px solid #e8ecf2;
+    }
+
+    .tile-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a2e;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+
+    .tile-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tile-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #888;
+      transition: background 0.15s, color 0.15s;
+    }
+    .tile-btn:hover { background: #e8ecf2; color: #333; }
+    .tile-btn.delete:hover { background: #ffe5e5; color: #e53e3e; }
+
+    .tile-preview {
+      flex: 1;
+      position: relative;
+      background: #f0f2f5;
+      overflow: hidden;
+    }
+
+    .tile-preview iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      pointer-events: none;
+      transform-origin: top left;
+    }
+
+    .tile-overlay {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .tile-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #aab0be;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .tile-placeholder .icon { font-size: 32px; }
+
+    /* ── FULLSCREEN VIEW ── */
+    #fullscreen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      flex-direction: column;
+      background: #fff;
+    }
+    #fullscreen.active { display: flex; }
+
+    #fs-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: #ffffff;
+      border-bottom: 1px solid #e0e4ea;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    #fs-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f0f2f5;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #1a1a2e;
+      transition: background 0.2s;
+    }
+    #fs-back:hover { background: #e0e4ea; }
+
+    #fs-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a2e;
+      flex: 1;
+    }
+
+    #fs-timer {
+      font-size: 12px;
+      color: #aab0be;
+      font-weight: 500;
+    }
+
+    #fs-iframe {
+      flex: 1;
+      border: none;
+      width: 100%;
+    }
+
+    /* ── MODAL ── */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    #modal-overlay.active { display: flex; }
+
+    #modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      width: 380px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+    }
+
+    #modal h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #1a1a2e;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #e0e4ea;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1a1a2e;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .form-group input:focus { border-color: #4f6ef7; }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+
+    #modal-cancel { background: #f0f2f5; color: #555; }
+    #modal-cancel:hover { background: #e0e4ea; }
+    #modal-save { background: #4f6ef7; color: #fff; }
+    #modal-save:hover { background: #3a57e8; }
+
+    /* ── TIMER BAR ── */
+    #timer-bar {
+      height: 3px;
+      background: #4f6ef7;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      transition: width 1s linear;
+    }
+  </style>
+</head>
+<body>
+
+<!-- GRID VIEW -->
+<div id="launcher">
+  <div id="topbar">
+    <h1>🚀 My Launcher</h1>
+    <button id="add-btn" onclick="openModal()">＋ App hinzufügen</button>
+  </div>
+  <div id="grid"></div>
+</div>
+
+<!-- FULLSCREEN VIEW -->
+<div id="fullscreen">
+  <div id="fs-bar" style="position:relative;">
+    <button id="fs-back" onclick="closeFullscreen()">← Zurück</button>
+    <span id="fs-title"></span>
+    <span id="fs-timer"></span>
+    <div id="timer-bar"></div>
+  </div>
+  <iframe id="fs-iframe" src="about:blank"></iframe>
+</div>
+
+<!-- ADD MODAL -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="modal-title">App hinzufügen</h2>
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" id="input-name" placeholder="z.B. Google" />
+    </div>
+    <div class="form-group">
+      <label>URL</label>
+      <input type="url" id="input-url" placeholder="https://..." />
+    </div>
+    <div class="modal-actions">
+      <button id="modal-cancel" onclick="closeModal()">Abbrechen</button>
+      <button id="modal-save" onclick="saveTile()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let tiles = JSON.parse(localStorage.getItem('launcher_tiles') || '[]');
+  let inactivityTimer = null;
+  let countdownInterval = null;
+  let editingIndex = null;
+  const TIMEOUT_SEC = 60;
+
+  function save() {
+    localStorage.setItem('launcher_tiles', JSON.stringify(tiles));
+  }
+
+  function render() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    if (tiles.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:#aab0be;gap:12px;">
+          <div style="font-size:48px;">🧩</div>
+          <div style="font-size:15px;font-weight:600;">Noch keine Apps</div>
+          <div style="font-size:13px;">Klicke auf "App hinzufügen" um zu starten</div>
+        </div>`;
+      return;
+    }
+    tiles.forEach((tile, i) => {
+      const div = document.createElement('div');
+      div.className = 'tile';
+      div.innerHTML = `
+        <div class="tile-header">
+          <span class="tile-title" title="${tile.name}">${tile.name}</span>
+          <div class="tile-actions">
+            <button class="tile-btn" title="Bearbeiten" onclick="event.stopPropagation();editTile(${i})">✏️</button>
+            <button class="tile-btn delete" title="Löschen" onclick="event.stopPropagation();deleteTile(${i})">🗑️</button>
+          </div>
+        </div>
+        <div class="tile-preview">
+          <iframe src="${tile.url}" loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+          <div class="tile-overlay" onclick="openFullscreen(${i})"></div>
+        </div>`;
+      grid.appendChild(div);
+    });
+  }
+
+  function openFullscreen(i) {
+    const tile = tiles[i];
+    document.getElementById('fs-title').textContent = tile.name;
+    document.getElementById('fs-iframe').src = tile.url;
+    document.getElementById('fullscreen').classList.add('active');
+    resetInactivityTimer();
+
+    ['mousemove','keydown','click','scroll','touchstart'].forEach(e =>
+      document.getElementById('fullscreen').addEventListener(e, resetInactivityTimer)
+    );
+  }
+
+  function closeFullscreen() {
+    clearTimeout(inactivityTimer);
+    clearInterval(countdownInterval);
+    document.getElementById('fullscreen').classList.remove('active');
+    document.getElementById('fs-iframe').src = 'about:blank';
+    document.getElementById('fs-timer').textContent = '';
+    document.getElementById('timer-bar').style.width = '100%';
+
+    ['mousemove','keydown','click','scroll','touchstart'].forEach(e =>
+      document.getElementById('fullscreen').removeEventListener(e, resetInactivityTimer)
+    );
+  }
+
+  function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    clearInterval(countdownInterval);
+
+    let remaining = TIMEOUT_SEC;
+    const bar = document.getElementById('timer-bar');
+    const timerLabel = document.getElementById('fs-timer');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+
+    countdownInterval = setInterval(() => {
+      remaining--;
+      timerLabel.textContent = `Zurück in ${remaining}s`;
+      const pct = (remaining / TIMEOUT_SEC) * 100;
+      bar.style.transition = 'width 1s linear';
+      bar.style.width = pct + '%';
+      if (remaining <= 0) clearInterval(countdownInterval);
+    }, 1000);
+
+    inactivityTimer = setTimeout(() => {
+      closeFullscreen();
+    }, TIMEOUT_SEC * 1000);
+  }
+
+  function openModal(editIdx = null) {
+    editingIndex = editIdx;
+    const modal = document.getElementById('modal-overlay');
+    document.getElementById('modal-title').textContent = editIdx !== null ? 'App bearbeiten' : 'App hinzufügen';
+    document.getElementById('input-name').value = editIdx !== null ? tiles[editIdx].name : '';
+    document.getElementById('input-url').value = editIdx !== null ? tiles[editIdx].url : '';
+    modal.classList.add('active');
+    setTimeout(() => document.getElementById('input-name').focus(), 100);
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('active');
+    editingIndex = null;
+  }
+
+  function saveTile() {
+    const name = document.getElementById('input-name').value.trim();
+    let url = document.getElementById('input-url').value.trim();
+    if (!name || !url) { alert('Bitte Name und URL eingeben.'); return; }
+    if (!url.startsWith('http')) url = 'https://' + url;
+
+    if (editingIndex !== null) {
+      tiles[editingIndex] = { name, url };
+    } else {
+      tiles.push({ name, url });
+    }
+    save();
+    render();
+    closeModal();
+  }
+
+  function editTile(i) { openModal(i); }
+
+  function deleteTile(i) {
+    if (confirm(`"${tiles[i].name}" wirklich löschen?`)) {
+      tiles.splice(i, 1);
+      save();
+      render();
+    }
+  }
+
+  // Enter key in modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('modal-overlay').classList.contains('active')) saveTile();
+    if (e.key === 'Escape') {
+      if (document.getElementById('modal-overlay').classList.contains('active')) closeModal();
+      else if (document.getElementById('fullscreen').classList.contains('active')) closeFullscreen();
+    }
+  });
+
+  render();
+</script>
+</body>
+</html>
